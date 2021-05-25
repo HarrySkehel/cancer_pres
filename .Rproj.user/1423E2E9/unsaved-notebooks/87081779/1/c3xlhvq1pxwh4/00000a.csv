@@ -1,0 +1,7 @@
+"0","borders_cases_long <- 
+  select(c(""id"" : ""deaths_age90and_over""))
+"
+"2","NAs introduced by coercion"
+"2","NAs introduced by coercion"
+"2","Error in ""id"":""deaths_age90and_over"" : NA/NaN argument
+"
