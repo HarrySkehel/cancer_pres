@@ -1,0 +1,26 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
+
+```{r}
+deaths_by_region <- read_csv("mortality_by_hb.csv") %>% clean_names()
+
+borders_cases <- deaths_by_region %>% 
+  filter(hbr == "S08000016")
+
+borders_cases
+
+```
+
+```{r}
+borders_cases <- 
+  select()
+```
+
