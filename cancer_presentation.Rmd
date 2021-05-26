@@ -3,24 +3,35 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-```{r}
+```{r echo=FALSE}
 library(tidyverse)
 library(janitor)
+library(DT)
+library(rmarkdown)
+library(kableExtra)
+
 ```
 
 
-```{r}
+```{r echo=FALSE, eval=FALSE}
 deaths_by_region <- read_csv("mortality_by_hb.csv") %>% clean_names()
 
-borders_cases <- deaths_by_region %>% 
-  filter(hbr == "S08000016")
-
-borders_cases
+incedences <- read_csv("incedence_by_hb.csv") %>% clean_names()
 
 ```
+ 10 highest incidences and deaths by gender
+ 
 
-```{r}
-borders_cases <- 
-  select()
+```{r echo=FALSE, fig.align='right'}
+datatable(highest_male_deaths)
 ```
+
+
+```{r echo=FALSE, fig.cap='two plots', fig.align='left'}
+datatable(highest_female_deaths)
+datatable(highest_male_deaths)
+```
+
+
+
 

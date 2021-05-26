@@ -3,24 +3,79 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-```{r}
+```{r echo=FALSE}
 library(tidyverse)
 library(janitor)
+library(DT)
+library(rmarkdown)
+library(kableExtra)
+
 ```
 
 
-```{r}
+```{r echo=FALSE, eval=FALSE}
 deaths_by_region <- read_csv("mortality_by_hb.csv") %>% clean_names()
 
-borders_cases <- deaths_by_region %>% 
-  filter(hbr == "S08000016")
+incedences <- read_csv("incedence_by_hb.csv") %>% clean_names()
 
-borders_cases
+waiting_times <- read_csv("waiting_times.csv") %>%clean_names()
 
+```
+ 
+Cancer effects people of all ages and genders. Some people have a genetic predisposition to certain cancers, breast cancer for example has very clear genetic indicators.
+
+Some cancers are also gender specific, only men can get prostate cancer and only women can get ovarian cancer for example.
+
+I have investigated the cancer rates in the Scottish Borders and had a further look into the age of cancer patients who have died. 
+
+Secondly I have investigated the most occuring cancer types for each gender to find out if there are any cancers that are prevalent in both genders.
+
+Finally I also aimed to identify if the most reported cancer types were also the cancer types that were the highest causes of death
+ 
+ 10 highest incidences by gender
+ 
+
+```{r echo=FALSE}
+top_10_male_incidences %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_registrations) +
+  geom_col() +
+  coord_flip()
+
+top_10_male_incidences %>% 
+  head(5)
+
+top_10_Female_incidences %>% 
+  head(5) 
+
+top_10_Female_incidences %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_registrations) +
+  geom_col() +
+  coord_flip()
 ```
 
 ```{r}
-borders_cases <- 
-  select()
+top_10_male_deaths %>% 
+  head(5)
+
+top_10_female_deaths %>% 
+  head(5)
+
+
 ```
+death ages seperated by gender
+```{r}
+borders_deaths_long %>% 
+  ggplot() +
+  aes(x = age, y = number_of_deaths) +
+  geom_col() +
+  facet_grid(~ sex)
+```
+
+
+
+
 

@@ -1,0 +1,38 @@
+"0","deaths_by_region <- read_csv(""mortality_by_hb.csv"") %>% clean_names()"
+"2","
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double(),
+  HBR = [31mcol_character()[39m,
+  CancerSiteICD10Code = [31mcol_character()[39m,
+  CancerSite = [31mcol_character()[39m,
+  Sex = [31mcol_character()[39m,
+  SexQF = [31mcol_character()[39m,
+  Year = [31mcol_character()[39m,
+  EASRLower95pcConfidenceIntervalQF = [31mcol_character()[39m,
+  EASRUpper95pcConfidenceIntervalQF = [31mcol_character()[39m,
+  WASRLower95pcConfidenceIntervalQF = [31mcol_character()[39m,
+  WASRUpper95pcConfidenceIntervalQF = [31mcol_character()[39m
+)
+[36mℹ[39m Use [38;5;251m[48;5;235m[38;5;251m[48;5;235m`spec()`[48;5;235m[38;5;251m[49m[39m for the full column specifications.
+
+"
+"0","incedences <- read_csv(""incedence_by_hb.csv"") %>% clean_names()"
+"2","
+[36m──[39m [1m[1mColumn specification[1m[22m [36m─────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double(),
+  HB = [31mcol_character()[39m,
+  CancerSiteICD10Code = [31mcol_character()[39m,
+  CancerSite = [31mcol_character()[39m,
+  Sex = [31mcol_character()[39m,
+  SexQF = [31mcol_character()[39m,
+  Year = [31mcol_character()[39m,
+  EASRLower95pcConfidenceIntervalQF = [31mcol_character()[39m,
+  EASRUpper95pcConfidenceIntervalQF = [31mcol_character()[39m,
+  WASRLower95pcConfidenceIntervalQF = [31mcol_character()[39m,
+  WASRUpper95pcConfidenceIntervalQF = [31mcol_character()[39m
+)
+[36mℹ[39m Use [38;5;251m[48;5;235m[38;5;251m[48;5;235m`spec()`[48;5;235m[38;5;251m[49m[39m for the full column specifications.
+
+"
