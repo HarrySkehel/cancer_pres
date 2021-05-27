@@ -1,0 +1,170 @@
+borders_cases <- deaths_by_region %>% 
+  filter(hbr == "S08000016")
+
+borders_cases_long <- borders_cases  %>% 
+  select(id : deaths_age90and_over)
+
+borders_cases_long <- borders_cases_long %>% 
+  pivot_longer(cols = 8:26,
+               names_to = "age",
+               values_to = "number_of_deaths")
+
+borders_cases_long <- borders_cases_long %>% 
+  filter(sex != "All")
+
+
+
+incedences <- read_csv("incedence_by_hb.csv") %>% clean_names()
+
+incedences_borders <- incedences %>% 
+  filter(hb == "S08000016", sex != "All", cancer_site != "All cancer types") %>% 
+  select(- sex_qf) 
+
+incedences_borders <- incedences_borders %>% 
+  select(id : incidences_age85and_over)
+
+borders_incidences_long <- incedences_borders %>% 
+  pivot_longer(cols = 7:24,
+               names_to = "age_range",
+               values_to = "number_of_incidences")
+
+
+incidences_by_gender <- borders_incidences_long %>% 
+  group_by(cancer_site, sex) %>% 
+  summarise(number_of_registrations = sum(number_of_incidences))
+
+
+top_10_incidences <- incidences_by_gender %>% 
+  arrange(desc(number_of_registrations)) %>% 
+  head(10)
+
+
+deaths_by_gender <- borders_cases_long %>% 
+  filter(cancer_site != "All cancer types", cancer_site !="All cancer types incl NMSC") %>% 
+  group_by(cancer_site, sex) %>% 
+  summarise(number_of_cases = sum(number_of_deaths)) 
+
+top_10_deaths <- deaths_by_gender %>% 
+  arrange(desc(number_of_cases)) %>% 
+  head(10)
+
+
+top_10_male_deaths <- deaths_by_gender %>% 
+  filter(sex == "Male") %>% 
+  arrange(desc(number_of_cases)) %>% 
+  head(10)
+
+top_10_female_deaths <- deaths_by_gender %>% 
+  filter(sex == "Female") %>% 
+  arrange(desc(number_of_cases)) %>% 
+  head(10)
+
+top_10_male_incidences <- incidences_by_gender %>% 
+  filter(sex == "Male") %>% 
+  arrange(desc(number_of_registrations)) %>% 
+  head(10)
+
+top_10_Female_incidences <- incidences_by_gender %>% 
+  filter(sex == "Female") %>% 
+  arrange(desc(number_of_registrations)) %>% 
+  head(10)
+
+
+incidences_by_gender %>% 
+  filter(sex == "Female") %>% 
+  arrange(desc(number_of_registrations)) %>% 
+  head(10)
+
+border_waiting_times <- waiting_times %>% 
+  filter(hb == "S08000016") %>% 
+  filter(cancer_type != "All Cancer Types")
+
+borders_incidences_long <- borders_incidences_long %>% 
+  mutate(age_range = case_when(
+    str_detect(age_range, "incidences_age_under5") ~ "<5",
+    str_detect(age_range, "incidences_age5to9") ~ "5-9",
+    str_detect(age_range, "incidences_age10to14") ~ "10-14",
+    str_detect(age_range, "incidences_age15to19") ~ "15-19",
+    str_detect(age_range, "incidences_age20to24") ~ "20-24",
+    str_detect(age_range, "incidences_age25to29") ~ "25-29",
+    str_detect(age_range, "incidences_age30to34") ~ "30-34",
+    str_detect(age_range, "incidences_age35to39") ~ "35-39",
+    str_detect(age_range, "incidences_age40to44") ~ "40-44",
+    str_detect(age_range, "incidences_age45to49") ~ "45-49",
+    str_detect(age_range, "incidences_age50to54") ~ "50-54",
+    str_detect(age_range, "incidences_age55to59") ~ "55-59",
+    str_detect(age_range, "incidences_age60to64") ~ "60-64",
+    str_detect(age_range, "incidences_age65to69") ~ "65-69",
+    str_detect(age_range, "incidences_age70to74") ~ "70-74",
+    str_detect(age_range, "incidences_age75to79") ~ "75-79",
+    str_detect(age_range, "incidences_age80to84") ~ "80-84",
+    str_detect(age_range, "incidences_age85and_over") ~ ">85"
+  ))
+
+borders_deaths_long <- borders_cases_long %>% 
+  mutate(age = case_when(
+    str_detect(age, "deaths_age_under5") ~ "<5",
+    str_detect(age, "deaths_age5to9") ~ "5-9",
+    str_detect(age, "deaths_age10to14") ~ "10-14",
+    str_detect(age, "deaths_age15to19") ~ "15-19",
+    str_detect(age, "deaths_age20to24") ~ "20-24",
+    str_detect(age, "deaths_age25to29") ~ "25-29",
+    str_detect(age, "deaths_age30to34") ~ "30-34",
+    str_detect(age, "deaths_age35to39") ~ "35-39",
+    str_detect(age, "deaths_age40to44") ~ "40-44",
+    str_detect(age, "deaths_age45to49") ~ "45-49",
+    str_detect(age, "deaths_age50to54") ~ "50-54",
+    str_detect(age, "deaths_age55to59") ~ "55-59",
+    str_detect(age, "deaths_age60to64") ~ "60-64",
+    str_detect(age, "deaths_age65to69") ~ "65-69",
+    str_detect(age, "deaths_age70to74") ~ "70-74",
+    str_detect(age, "deaths_age75to79") ~ "75-79",
+    str_detect(age, "deaths_age80to84") ~ "80-84",
+    str_detect(age, "deaths_age85to89") ~ "85-89",
+    str_detect(age, "deaths_age90and_over") ~ "90 +",
+  ))
+
+borders_deaths_long <- borders_deaths_long %>% 
+  filter(cancer_site != "All cancer types") %>% 
+  filter(cancer_site != "All cancer types incl NMSC")
+  
+
+
+borders_deaths_long %>% 
+  filter(sex == "Male") %>% 
+  ggplot() +
+  aes(x = age, y = number_of_deaths) +
+  geom_col()
+
+
+borders_deaths_long %>% 
+  filter(sex == "Female") %>% 
+  ggplot() +
+  aes(x = age, y = number_of_deaths) +
+  geom_col()
+
+
+borders_deaths_long %>% 
+  ggplot() +
+  aes(x = age, y = number_of_deaths) +
+  geom_col() +
+  facet_grid(~ sex)
+
+top_10_Female_incidences %>% 
+  filter(cancer_site != "Non-melanoma skin cancer") %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_registrations) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  theme_minimal()
+
+
+top_10_male_incidences %>% 
+  filter(cancer_site != "Non-melanoma skin cancer") %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_registrations) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  theme_minimal()

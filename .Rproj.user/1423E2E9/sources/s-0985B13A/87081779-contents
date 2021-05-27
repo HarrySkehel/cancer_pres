@@ -14,11 +14,11 @@ library(kableExtra)
 
 
 ```{r echo=FALSE, eval=FALSE}
-deaths_by_region <- read_csv("mortality_by_hb.csv") %>% clean_names()
+deaths_by_region <- read_csv("raw_data/mortality_by_hb.csv") %>% clean_names()
 
-incedences <- read_csv("incedence_by_hb.csv") %>% clean_names()
+incedences <- read_csv("raw_data/incedence_by_hb.csv") %>% clean_names()
 
-waiting_times <- read_csv("waiting_times.csv") %>%clean_names()
+waiting_times <- read_csv("raw_data/waiting_times.csv") %>%clean_names()
 
 ```
  
