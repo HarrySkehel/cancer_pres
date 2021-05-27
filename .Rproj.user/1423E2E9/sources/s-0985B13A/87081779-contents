@@ -22,58 +22,160 @@ waiting_times <- read_csv("waiting_times.csv") %>%clean_names()
 
 ```
  
+### Introduction 
+ 
 Cancer effects people of all ages and genders. Some people have a genetic predisposition to certain cancers, breast cancer for example has very clear genetic indicators.
 
 Some cancers are also gender specific, only men can get prostate cancer and only women can get ovarian cancer for example.
 
 I have investigated the cancer rates in the Scottish Borders and had a further look into the age of cancer patients who have died. 
 
-Secondly I have investigated the most occuring cancer types for each gender to find out if there are any cancers that are prevalent in both genders.
+Secondly I have investigated the most occurring cancer types for each gender to find out if there are any cancers that are prevalent in both genders.
 
 Finally I also aimed to identify if the most reported cancer types were also the cancer types that were the highest causes of death
  
- 10 highest incidences by gender
+### Distrubtion of age at death by gender
  
-
+ 
 ```{r echo=FALSE}
-top_10_male_incidences %>% 
-  head(5) %>% 
-  ggplot() +
-  aes(x = cancer_site, y = number_of_registrations) +
-  geom_col() +
-  coord_flip()
-
-top_10_male_incidences %>% 
-  head(5)
-
-top_10_Female_incidences %>% 
-  head(5) 
-
-top_10_Female_incidences %>% 
-  head(5) %>% 
-  ggplot() +
-  aes(x = cancer_site, y = number_of_registrations) +
-  geom_col() +
-  coord_flip()
-```
-
-```{r}
-top_10_male_deaths %>% 
-  head(5)
-
-top_10_female_deaths %>% 
-  head(5)
-
-
-```
-death ages seperated by gender
-```{r}
-borders_deaths_long %>% 
+borders_deaths_long %>%
+  filter(age != "5-9") %>% 
   ggplot() +
   aes(x = age, y = number_of_deaths) +
-  geom_col() +
-  facet_grid(~ sex)
+  geom_col(fill = "black") +
+  facet_wrap(~ sex) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 60)) +
+  labs(title = "Distribution of Cancer Deaths by Age",
+       subtitle = "2014 - 2018",
+       x = "Age (Years)",
+       y = "Number of Deaths")
+
 ```
+
+We can see from the above graph that there is a similar left skewed distribution for both genders with a majority of the deaths being between 65 and 90. However we can see that the number of women dying of cancer between 50 and 59 is greater for that of men of the same age. There does not appear to be any one particular cancer type that causes these earlier deaths in women.
+
+Overall we can see that while the distributions are similar, there do appear to be more men than women die from cancer. 
+
+### Distrubtion of age at cancer incidence
+
+```{r echo=FALSE}
+borders_incidences_long %>%
+  filter(age_range != "5-9", age_range != ">85") %>% 
+  ggplot() +
+  aes(x = age_range, y = number_of_incidences) +
+  geom_col(fill = "black") +
+  facet_wrap(~ sex) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 60)) +
+    labs(title = "Distribution of Cancer Incidence by Age",
+       subtitle = "2015 - 2019",
+       x = "Age (Years)",
+       y = "Number of Cancer Cases")
+```
+
+
+The rate of cancer incidence paints a similar picture however we can see that the reported cancer rates in men under 50 is lower than that for women of the same age. This could be due to many physiological factors however it is know that men are less likely to visit the doctor than women are so it could be the case that the rates of actual cancer cases for men are higher than ever get reported.
+
+
+### 5 most frequntly occuring cancers by gender
+
+```{r echo=FALSE}
+
+#top_10_male_incidences %>% 
+  #head(5)
+
+#top_10_Female_incidences %>% 
+  #head(5) 
+
+top_10_male_incidences %>% 
+  filter(cancer_site != "Non-melanoma skin cancer") %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_registrations) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  theme_minimal() +
+  labs(title = "Five most frequently ocuuring Cancer types in men",
+       subtitle = "2015 - 2019",
+       y = "\nNumber of reported cases",
+       x = "Cancer Type\n"
+       )
+
+
+
+top_10_Female_incidences %>% 
+  filter(cancer_site != "Non-melanoma skin cancer") %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_registrations) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  theme_minimal() +
+    labs(title = "Five most frequently ocuuring Cancer types in women",
+       subtitle = "2015 - 2019",
+       y = "\nNumber of reported cases",
+       x = "Cancer Type\n"
+       )
+```
+For the above graphs it can be seen that for both genders Basal cell carcinoma is highly reported type of cancer. It is a very common type of cancer in general as its primary cause is over exposure to UV and is people are pale/are very freckly they are at higher risk.
+
+It is also worth noting that Basal cell carcinoma, colorectal cancer and cancer of trachea, bronchus and lung are among the 5 most reported types for both men and women. While the more gender specific cancers(prostate and breast) also appearing in the top 5 at similar rates.
+
+
+### Top 5 cancer causes of death for both genders
+
+
+```{r echo=FALSE}
+# top_10_male_deaths %>% 
+#   head(5)
+# 
+# top_10_female_deaths %>% 
+#   head(5)
+
+top_10_male_deaths %>% 
+  filter(cancer_site != "Non-melanoma skin cancer") %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_cases) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  theme_minimal() +
+      labs(title = "Cancer death causing types in Men",
+       subtitle = "2014 - 2018",
+       y = "\nNumber of Deaths",
+       x = "Cancer Type\n"
+       )
+
+
+top_10_female_deaths %>% 
+  filter(cancer_site != "Non-melanoma skin cancer") %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_cases) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  theme_minimal() +
+       labs(title = "Cancer death causing types in Women",
+       subtitle = "2014 - 2018",
+       y = "\nNumber of Deaths",
+       x = "Cancer Type\n"
+       )
+
+```
+The above graphs show that cancer of the Trachea, bronchus and lung are the leading causes of cancer deaths for both men and women. Colorectal, breast and prostate cancer are the next highest causes of cancer death for women and men respectively. It is not surprising that pancreatic cancer appears in the top 5 for at least on gender as it widely known as the most deadly cancer with as little as a 5% survival rate.
+
+### Discussion
+
+The pattern of occurring cancer types for males and females is widely similar, apart from the more gender specific cancers. While breast and prostate cancers are both easily tested for they continue to be second highest causes of cancer deaths for their respective genders. The same goes for colorectal cancer however with awareness growing and regular screening being done for the over 50s the number of deaths should hopefully decrease. There are calls for screenings to start at 45.
+
+Trachea, bronchus and lung cancers still remaining the most common cause of cancer death among both mean and women. The number one cause for these cancers is smoking and until the number of people smoking drops considerably there is unlikely to be a reduction in the number of people having these cancers. Varieties of these cancers are also very aggressive with low 5 year survival rates.
+
+The imbalance in the rates of cancer cases/deaths in men and women can be attributed to many things, one of which is that men are simply more likely to get cancer purely from a genetic and physiological hapenstance. It is also the case however, that men (especially younger men) are less likely to go the doctor to report a problem than women are.
+
+
 
 
 

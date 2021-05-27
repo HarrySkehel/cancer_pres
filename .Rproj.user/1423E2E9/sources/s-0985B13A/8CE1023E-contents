@@ -1,0 +1,411 @@
+#
+# This is the server logic of a Shiny web application. You can run the
+# application by clicking 'Run App' above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
+library(shiny)
+library(viridis)
+
+# Tab_1 -------------------------------------------------------------------
+
+# Define server logic required to draw a histogram
+shinyServer(function(input, output) {
+  set.seed(42)
+  tab1_multiple_spatial_life <- reactive({
+    filter_life_year(input$tab1_select_year)
+  })
+
+  labeller <- geom_label_repel(
+              aes(x = lat, y = long, label = HBName),
+              fontface = "bold",
+              size = 5,
+              min.segment.length = 0,
+              box.padding =  0.5,
+              fill = "grey",
+              alpha = 0.8,
+              segment.curvature = -0.1,
+              segment.linetype = 1,
+              segment.ncp = 3,
+              segment.angle = 20
+            )
+    
+  output$tab1_spatial_series_life_exp  <- renderPlot({
+    ggplot(tab1_multiple_spatial_life(),
+           aes(fill = life_expectancy)) +
+    geom_sf(color = "black", size = 0.1) +
+    labeller +
+    coord_sf() +
+    theme_void() +
+    labs(
+      title = "",
+      subtitle = "",
+      fill = "Life Expectancy"
+    ) +
+    scale_fill_viridis(limits = c(71, 82)) +
+    theme(plot.title = element_text(size = 20, vjust = -30),
+          plot.subtitle = element_text(size = 12, vjust = -50))
+  }, height=1000)
+
+  
+  output$tab1_life_exp_series <- renderPlotly({
+    life_expectancy1<- life_expectancy %>%
+      filter(simd_quintiles == "All",
+             urban_rural_classification == "All",
+             age == "0 years",
+             str_detect(feature_code, "S92"),
+             str_detect(measurement,"Count"))
+    life_expectancy_plot <-
+      ggplot(life_expectancy1,aes(x = year_2, y = value,
+                                  group = sex,colour = sex, text = paste("LE: ", value,
+                                                                         "<br>Year: ", year_2
+                                  ))) +
+      geom_point(size = 0.5) +
+      geom_line(size = 0.5) +
+      coord_cartesian(ylim = c(0,100))+
+      labs(
+        x = "\nYear",
+        y = "Life Expectancy (years)\n",
+        title = "Life Expectancy In Scotland<br>1993 - 2019",
+        #subtitle = "1993 - 2019",
+        colour = "Gender"
+      ) +
+      theme_minimal() +
+      theme(axis.text = element_text(size = 12),
+            axis.title = element_text(size = 12),
+            plot.title = element_text(size = 13),
+            axis.text.x = element_text(angle = 60, vjust = -0.01)) +
+      scale_colour_brewer(palette = "Dark2")
+    ggplotly(life_expectancy_plot, tooltip = "text")
+  })
+  
+  ## life expectancy difference plot
+  output$tab1_life_exp_diff <- renderPlot({
+  life_expectancy %>%
+      filter (simd_quintiles == "All",
+              urban_rural_classification == "All",
+              age == "0 years",
+              str_detect(feature_code, "S92"),
+              str_detect(measurement,"Count")) %>%
+      arrange(year_2,sex) %>%
+      group_by(year_2) %>%
+      summarise(diff = first(value)- last(value)) %>% 
+      mutate(year_2 = as.numeric(as.character(year_2))) %>% 
+      ggplot()+
+      aes(x = year_2, y = diff) +
+      geom_line() +
+      scale_x_continuous(breaks = c(1993:2019))+
+      labs(
+        x = "\nYear",
+        y = "Life Expectancy difference (years)\n",
+        title = "Difference In Life Expectancy Between Male And Female In Scotland",
+        subtitle = "1993 - 2019"
+      ) +
+      theme_minimal() +
+      theme(axis.text = element_text(size = 15),
+            axis.title = element_text(size = 20),
+            plot.title = element_text(size = 20),
+            axis.text.x = element_text(angle = 60, vjust = -0.01)) +
+      scale_colour_brewer(palette = "Dark2")
+  }, width = 800)
+  
+  
+  
+#TAB2---------------------------------------------------------------
+  output$tab2_spatial_drug_discharge <- renderPlot({
+    ggplot(simp_hb_bdry, aes(fill = drug_discharge)) +
+    geom_sf(color = "black", size = 0.1) +
+    labeller +
+    coord_sf() +
+    theme_void() +
+    labs(
+      title = "Drug Discharges in Scotland",
+      subtitle = "per 100,000 cases (2018)",
+      fill = "Drug Discharges per 100,000"
+    ) +
+    scale_fill_viridis() +
+    theme(plot.title = element_text(size = 20),
+          plot.subtitle = element_text(size = 12))
+  }, height = 1000)
+
+  output$tab2_spatial_life_exp  <- renderPlot({
+    ggplot(simp_hb_bdry,
+           aes(fill = life_expectancy)) +
+    geom_sf(color = "black", size = 0.1) +
+    labeller +
+    coord_sf() +
+    theme_void() +
+    labs(
+      title = "Life Expectancy in Scotland",
+      subtitle = "2016-2018",
+      fill = "Life Expectancy"
+    ) +
+    scale_fill_viridis() +
+    theme(plot.title = element_text(size = 20),
+          plot.subtitle = element_text(size = 12))
+  }, height = 1000)
+
+  #static tables based on min/max
+  output$tab2_table_output_top_dd <- 
+    renderTable({simp_hb_bdry_top_dd_nohbcode},
+     caption = "Highest Drug Discharges", 
+     caption.placement = "top"
+     )
+
+  output$tab2_table_output_top_le <- 
+    renderTable({simp_hb_bdry_top_le_nohbcode},
+     caption = "Lowest Life Expectancy (Age)", 
+     caption.placement = "top"
+     )
+
+  #plots based on the top 3 from the table
+    output$tab2_plot_top_dd  <- renderPlot({
+      drug_by_hb %>%
+      ggplot() +
+      aes(x = year_1, y = value, fill = HBName) +
+      geom_col(position = "dodge", col = "white")+
+      facet_wrap(~HBName) +
+      labs(
+        x = "\nYear",
+        y = "Number of Discharges\n",
+        title = "Highest Drug Discharges",
+        fill = "Health Board Name"
+      ) +
+      theme_minimal() +
+      theme(axis.text = element_text(size = 15),
+            axis.title = element_text(size = 20),
+            plot.title = element_text(size = 25),
+            axis.text.x = element_text(angle = 60, vjust = -0.01),
+            strip.text = element_text(size = 12)) +
+      scale_fill_brewer(palette = "Dark2")
+  })
+
+ 
+  output$tab2_plot_top_le <- renderPlot({
+    le_by_hb %>%
+      ggplot() +
+      aes(x = year_1, y = mean_age, colour = HBName) +
+      geom_line()+
+      facet_wrap(~HBName) +
+      labs(
+        x = "\nYear",
+        y = "Life Expectancy (years)\n",
+        title = "Lowest Life Expectancy",
+        colour = "Health Board Name"
+      ) +
+      theme_minimal() +
+      theme(axis.text = element_text(size = 15),
+            axis.title = element_text(size = 20),
+            plot.title = element_text(size = 25),
+            axis.text.x = element_text(angle = 60, vjust = -0.01),
+            strip.text = element_text(size = 12)) +
+      scale_colour_brewer(palette = "Dark2")
+  })
+
+
+  #dynamic visuals based on input - select a single reactive input by health board
+
+  output$tab2_dyn_plot_top_dd  <- renderPlot({drug_by_hb_raw %>%
+      filter(HBName == input$HB) %>%
+      ggplot() +
+      aes(x = year_1, y = value, fill = HBName) +
+      geom_col(col = "white")+
+      labs(
+        x = "\nYear",
+        y = "Number of Discharges\n",
+        fill = "Health Board Name"
+      ) +
+      theme_minimal() +
+      theme(axis.text = element_text(size = 15),
+            axis.title = element_text(size = 20),
+            plot.title = element_text(size = 20),
+            axis.text.x = element_text(angle = 60, vjust = -0.01)) +
+      scale_fill_brewer(palette = "Dark2") +
+      ggtitle(input$HB,"Drug Discharges")
+  })
+
+  output$tab2_dyn_plot_top_le <- renderPlot({le_by_hb_raw %>%
+      filter(HBName == input$HB) %>%
+      ggplot() +
+      aes(x = year_1, y = mean_age, colour = HBName) +
+      geom_line() +
+      labs(
+        x = "\nYear",
+        y = "Life Expectancy (years)\n",
+        colour = "Region"
+      ) +
+      theme_minimal() +
+      theme(axis.text = element_text(size = 15),
+            axis.title = element_text(size = 20),
+            plot.title = element_text(size = 20),
+            axis.text.x = element_text(angle = 60, vjust = -0.01)) +
+      scale_colour_brewer(palette = "Dark2") +
+      ggtitle(input$HB,"Life Expectancy")
+  })
+  
+
+# Tab_3 -------------------------------------------------------------------
+
+
+  output$tab3_facet_plot <- renderPlot({
+    life_expect_scotland %>%
+      filter(simd_quintiles != "All") %>%
+      ggplot() +
+      aes(x = year_2, y = value, group = sex, colour = sex) +
+      geom_line() +
+      geom_point() +
+      labs(
+        title = "Life Expectancy by Deprivation Level",
+        subtitle = "2003 - 2018",
+        colour = "Gender"
+      ) +
+      xlab("\nTime (Years)") +
+      ylab("Life Expectancy (Years)") +
+      theme_bw() +
+      theme_h() +
+      theme(axis.text.x = element_text(angle = 60, vjust = -0.01),
+            strip.text = element_text(size = 12)) +
+      facet_grid(~ simd_quintiles) +
+      scale_colour_brewer(palette = "Dark2")
+  })
+
+  output$tab3_hle_plot <- renderPlot({
+    ggplot(healthy_life) +
+      aes(x = date_code, y = value, group = sex, colour = sex) +
+      geom_boxplot() +
+      facet_grid(~ simd_quintiles) +
+      labs(title = "Healthy Life Expectancy by Deprevation Level",
+           subtitle = "2015 - 2018",
+           colour = "Gender") +
+      xlab("\nYear") +
+      ylab("Healthy Life Expectancy (Years)\n") +
+      theme_bw() +
+      theme_h()+
+      theme(strip.text = element_text(size = 12)) +
+      scale_colour_brewer(palette = "Dark2")
+  })
+
+  output$tab3_life_exp_by_simd <- renderPlot({
+    life_drug_vigintile_hb %>%
+      ggplot() +
+      aes(y = mean_life_exp, x = mean_vigintile) +
+      geom_point() + 
+      geom_smooth(method = "lm", se = FALSE, colour = "black") +
+      geom_label_repel(
+        aes(x = mean_vigintile, y = mean_life_exp, label = HBName),
+        fontface = "bold",
+        size = 4,
+        min.segment.length = 0,
+        box.padding =  0.5,
+        fill = "grey",
+        alpha = 0.8,
+        segment.curvature = -0.1,
+        segment.linetype = 1,
+        segment.ncp = 3,
+        segment.angle = 20
+      ) +
+      theme_bw() +
+      labs(title = "Mean Life Expectancy VS Mean SIMD Vigintile",
+           subtitle = "In 2018",
+           x = "\nMean SIMD Vigintile",
+           y = "Mean Life Expectancy\n") +
+      theme(axis.title = element_text(size = 15),
+            axis.text = element_text(size = 12),
+            title = element_text(size = 17))
+  })
+
+  output$tab3_drug_disch_by_simd <- renderPlot({
+    drug_vigintile_hb_simp %>%
+      ggplot() +
+      aes(x = mean_vig, y = discharges) +
+      geom_point() +
+      geom_smooth(method = "lm", se = FALSE, colour = "black") +
+      geom_label_repel(
+        aes(x = mean_vig, y = discharges, label = hb_name),
+        fontface = "bold",
+        size = 4,
+        min.segment.length = 0,
+        box.padding =  0.5,
+        fill = "grey",
+        alpha = 0.8,
+        segment.curvature = -0.1,
+        segment.linetype = 1,
+        segment.ncp = 3,
+        segment.angle = 20
+      ) +
+      theme_bw() +
+      labs(title = "Drug Discharges VS Mean SIMD Vigintile",
+           subtitle = "In 2018",
+           x = "\nMean SIMD Vigintile",
+           y = "Number of Drug Discharges (per 100, 000)\n") +
+      theme(axis.title = element_text(size = 15),
+            axis.text = element_text(size = 12),
+            title = element_text(size = 17))
+  })
+
+  output$tab_3_life_exp_by_vig <- renderPlot({
+    life_exp_vigintile_hb %>%
+      filter(HBName == "Shetland") %>%
+      ggplot() +
+      aes(x = vigintile_value) +
+      geom_histogram(bins = 20, col = "white")
+  })
+
+  tab3_input_region <- reactive({
+    simp_data_zone_bdry %>% 
+      filter(hb_name == input$tab3_select_region)
+  })
+  
+  output$tab3_spatial_dep <- renderPlot({
+    tab3_input_region() %>% 
+      ggplot() +
+      aes(fill = vigintile_value) +
+      geom_sf(colour = "black", size = 0.1) +
+      scale_fill_viridis() +
+      theme_void()
+  })
+  
+  
+  # ggplot(simp_hb_bdry,
+  #        aes(fill = life_expectancy)) +
+  #   geom_sf(color = "black", size = 0.1) +
+  #   labeller +
+  #   coord_sf() +
+  #   theme_void() +
+  #   labs(
+  #     title = "Life Expectancy in Scotland",
+  #     subtitle = "2016-2018",
+  #     fill = "Life Expectancy"
+  #   ) +
+  #   scale_fill_viridis() +
+  #   theme(plot.title = element_text(size = 20),
+  #         plot.subtitle = element_text(size = 12))
+  
+  output$tab3_spatial_dep <- renderPlot({
+    tab3_input_region() %>% 
+      ggplot() +
+      aes(fill = vigintile_value) +
+      geom_sf(colour = "black", size = 0.1) +
+      scale_fill_viridis() +
+      theme_void() 
+  })
+  
+  output$tab3_datazone_hb <- renderPlot({
+    simp_data_zone_bdry %>%
+      filter(hb_name == input$tab3_select_region) %>%
+      ggplot() +
+      aes(x = vigintile_value) +
+      geom_histogram(bins = 20, col = "white") +
+      theme_bw() +
+      labs(title = "DataZone SIMD Distribution by Health Board",
+           subtitle = "2018",
+           x = "\nSIMD Vigintile Ranking",
+           y = "Number of DataZones\n") +
+      theme(axis.title = element_text(size = 15),
+            axis.text = element_text(size = 12),
+            title = element_text(size = 17))
+  })
+})

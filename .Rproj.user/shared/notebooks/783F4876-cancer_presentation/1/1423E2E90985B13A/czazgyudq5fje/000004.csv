@@ -1,5 +1,0 @@
-"0","borders_deaths_long %>% "
-"0","  ggplot() +"
-"0","  aes(x = age, y = number_of_deaths) +"
-"0","  geom_col() +"
-"0","  facet_grid(~ sex)"

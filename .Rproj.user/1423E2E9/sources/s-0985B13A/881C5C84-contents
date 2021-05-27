@@ -150,6 +150,21 @@ borders_deaths_long %>%
   geom_col() +
   facet_grid(~ sex)
 
+top_10_Female_incidences %>% 
+  filter(cancer_site != "Non-melanoma skin cancer") %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_registrations) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  theme_minimal()
 
-deaths_by_gender %>% 
-  
+
+top_10_male_incidences %>% 
+  filter(cancer_site != "Non-melanoma skin cancer") %>% 
+  head(5) %>% 
+  ggplot() +
+  aes(x = cancer_site, y = number_of_registrations) +
+  geom_col(fill = "black") +
+  coord_flip() +
+  theme_minimal()

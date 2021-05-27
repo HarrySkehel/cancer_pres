@@ -3,9 +3,9 @@
     "path": "~/Documents/interview_prep_presentation/cancer_pres/cancer_presentation.Rmd",
     "project_path": "cancer_presentation.Rmd",
     "type": "r_markdown",
-    "hash": "0",
+    "hash": "2227035981",
     "contents": "",
-    "dirty": true,
+    "dirty": false,
     "created": 1621932325846.0,
     "source_on_save": false,
     "relative_order": 1,
@@ -14,15 +14,15 @@
         "chunk_output_type": "inline",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "74,19",
-        "scrollLine": "68"
+        "cursorPosition": "127,3",
+        "scrollLine": "90"
     },
     "folds": "",
-    "lastKnownWriteTime": 1622043005,
+    "lastKnownWriteTime": 1622056828,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1622048137785,
+    "last_content_update": 1622056828174,
     "read_only": false,
     "read_only_alternatives": []
 }

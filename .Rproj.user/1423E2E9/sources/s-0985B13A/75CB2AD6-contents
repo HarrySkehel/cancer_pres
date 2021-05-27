@@ -1,0 +1,258 @@
+
+# Load Libraries ----------------------------------------------------------
+
+library(here)
+library(tidyverse)
+library(janitor)
+library(rmapshaper)
+library(sf)
+library(RColorBrewer)
+library(ggrepel)
+library(plotly)
+
+
+# Read Data ---------------------------------------------------------------
+life_expectancy <- read_csv(here("raw_data/life_expectancy.csv")) %>%
+  clean_names() %>%
+  mutate(date = date_code) %>%
+  separate(date,
+           c("year_1","year_2"),
+           sep = "-")
+
+drug_discharges <-
+  read_csv(here("raw_data/drug_related_hospital_discharge.csv")) %>%
+  clean_names() %>%
+  mutate(date = date_code) %>%
+  separate(date_code,
+           c("year_1","year_2"),
+           sep = "/")
+
+data_zones <- read_csv(here("raw_data/Datazone2011lookup.csv")) %>%
+  clean_names()
+
+deprivation <- read_csv(here("raw_data/index_multiple_deprivation.csv")) %>%
+  clean_names()
+
+healthy_life <- read_csv(here("raw_data/healthy_life_expectancy.csv")) %>%
+  clean_names()
+
+simp_hb_bdry <- st_read(here::here("raw_data/boundary_data/health_board_boundary/SG_NHS_HealthBoards_2019.shp"))
+simp_hb_bdry <- ms_simplify(simp_hb_bdry, keep = 0.001)
+
+simp_data_zone_bdry <- st_read(here("raw_data/boundary_data/SG_DataZoneBdry_2011/SG_DataZone_Bdry_2011.shp"))
+simp_data_zone_bdry <- ms_simplify(simp_data_zone_bdry, keep = 0.005)
+
+# Data Wrangling ----------------------------------------------------------
+
+
+# Tab_1 -------------------------------------------------------------------
+
+
+# Find centoids of geometry
+simp_hb_bdry <- simp_hb_bdry %>%
+  mutate(centres = st_centroid(geometry)) %>%
+  mutate(lat = st_coordinates(centres)[,1],
+         long = st_coordinates(centres)[,2])
+
+filter_life_year <- function(year_input){
+  # Filter for specific year
+  life_exp_data <-
+    life_expectancy %>%
+    filter(year_2 == year_input,
+           measurement == "Count",
+           age == "0 years",
+           str_detect(feature_code, "S08")) %>%
+    group_by(feature_code) %>%
+    summarise(age = mean(value)) %>%
+    rename(HBCode = "feature_code")
+  # Append data to boundary data
+  simp_hb_bdry$life_expectancy <- life_exp_data$age
+  return(simp_hb_bdry)
+}
+
+simp_hb_bdry <- filter_life_year("2019")
+
+unique_years <- as.numeric(sort(unique(life_expectancy$year_2)))
+
+
+# Tab_2 -------------------------------------------------------------------
+
+drug_data <-
+  drug_discharges %>%
+  filter(measurement == "Ratio",
+         year_2 == "2018",
+         str_detect(feature_code, "S08")) %>%
+  group_by(feature_code) %>%
+  summarise(discharge_ratio = mean(value))
+
+simp_hb_bdry$drug_discharge <- drug_data$discharge_ratio
+
+# for visuals in tab 2
+
+# produces 3 lowest life expectancy
+simp_hb_bdry_top_le <- as_tibble(simp_hb_bdry) %>%
+  slice_min(life_expectancy, n = 3) %>%
+  select(HBCode, HBName, life_expectancy)
+
+#produces the three without the HBcode
+simp_hb_bdry_top_le_nohbcode <- simp_hb_bdry_top_le %>% 
+  select(HBName, life_expectancy) %>% 
+  rename(Health_Board = HBName, Life_Expectancy_Age = life_expectancy)
+
+# produces 3 highest drug discharges
+simp_hb_bdry_top_dd <- as_tibble(simp_hb_bdry) %>%
+  slice_max(drug_discharge, n = 3) %>%
+  select(HBCode, HBName, drug_discharge)
+
+#produces the three without the HBcode and chnaged to be better column headers
+simp_hb_bdry_top_dd_nohbcode <- simp_hb_bdry_top_dd %>% 
+  select(HBName, drug_discharge) %>% 
+  rename(Health_Board = HBName, Discharge_Count = drug_discharge)
+
+# wrangling for drug graph
+
+drug_filter2 <- drug_discharges %>%
+  rename(HBCode = feature_code) %>%
+  filter(measurement == "Ratio") %>%
+  filter(HBCode == simp_hb_bdry_top_dd$HBCode[2] |
+           HBCode == simp_hb_bdry_top_dd$HBCode[1] |
+           HBCode == simp_hb_bdry_top_dd$HBCode[3]) %>%
+
+  mutate(year_1 = as.numeric(year_1)) %>%
+  group_by(year_1, HBCode)
+
+hbname <- as_tibble(simp_hb_bdry) %>%
+  select(HBCode,HBName)
+
+drug_by_hb <- left_join(drug_filter2, hbname, by = "HBCode")
+
+drug_hb_ratio <- drug_discharges %>%
+  rename(HBCode = feature_code) %>%
+  filter(measurement == "Ratio")
+
+drug_by_hb_raw <- left_join(drug_hb_ratio, hbname, by = "HBCode")
+
+#wrangling for life graph
+
+life_filter2 <- life_expectancy %>%
+
+rename(HBCode = feature_code) %>%
+filter(measurement == "Count", age == "0 years") %>%
+filter(HBCode == simp_hb_bdry_top_le$HBCode[2] |
+       HBCode == simp_hb_bdry_top_le$HBCode[1] |
+       HBCode == simp_hb_bdry_top_le$HBCode[3]) %>%
+
+
+mutate(year_1 = as.numeric(year_1)) %>%
+group_by(year_1, HBCode) %>%
+summarise(mean_age = mean(value))
+
+hbname <- as_tibble(simp_hb_bdry) %>%
+  select(HBCode,HBName)
+
+le_by_hb <- left_join(life_filter2, hbname, by = "HBCode")
+
+le_hb_ratio <- life_expectancy %>%
+  rename(HBCode = feature_code) %>%
+  filter(measurement == "Count", age == "0 years") %>%
+  mutate(year_1 = as.numeric(year_1)) %>%
+  group_by(year_1, HBCode) %>%
+  summarise(mean_age = mean(value))
+
+le_by_hb_raw <- left_join(le_hb_ratio, hbname, by = "HBCode")
+
+# Tab_3 -------------------------------------------------------------------
+
+# Wrangling for the life expectancy by SIMD Quintile graph
+
+## Graph theme
+theme_h <- function() { theme(
+  title = element_text(size = 17),
+  plot.subtitle = element_text(size = 13),
+  axis.text = element_text(size = 12),
+  axis.title = element_text(size = 14)
+)
+}
+
+life_expect_scotland <- life_expectancy %>%
+  filter(str_detect(feature_code, "S92")) %>%
+  filter(age == "0 years" & measurement == "Count") %>%
+  arrange(feature_code, simd_quintiles, year_1) %>%
+  select(-urban_rural_classification)
+
+healthy_life <- healthy_life %>%
+  select(feature_code, date_code, sex, simd_quintiles, age, value) %>%
+  filter(age == "0 years", simd_quintiles != "All") %>%
+  mutate(date_code = "2015 - 2018")
+
+
+
+## This part of the code will join the mean vigintile SIMD deprivation data
+## that is only available in datazones with a lookup table.
+## This creates a reference of SIMD deprivation to healthboard region in 2020
+## which can be joined again to life expectancy or drug discharges.
+## Final table allows the inference of drug discharges to SIMD vigintile values
+
+vigintile_dep <- deprivation %>%
+  filter(measurement == "Vigintile", simd_domain == "SIMD") %>%
+  rename(dz2011_code = "feature_code")
+# Reference for healthboard and datazone codes
+healthboard_dz <- data_zones %>%
+  select(hb_code, dz2011_code, hb_name)
+# Get the vigintile deprivation value for each health board in 2020
+vigintile_dep_2020 <- left_join(vigintile_dep,healthboard_dz, by = "dz2011_code") %>%
+  select(dz2011_code, hb_code, value, hb_name) %>% 
+  rename(vigintile_value = "value")
+
+mean_vigintile_dep <-
+  vigintile_dep_2020 %>%
+  group_by(hb_code) %>%
+  summarise(mean_SIMD_vigintile = mean(vigintile_value))
+
+life_expectancy_by_hb <- life_expectancy %>%
+  filter(str_detect(feature_code, "S08"),
+         measurement == "Count",
+         age == "0 years", year_2 == "2019") %>%
+  select(feature_code, value, sex) %>%
+  rename(hb_code = "feature_code",
+         life_exp = "value")
+
+drug_discharges_by_hb <- drug_discharges %>%
+  filter(str_detect(feature_code, "S08"),
+         year_2 == "2018",
+         measurement == "Ratio") %>%
+  select(feature_code, value) %>%
+  rename(hb_code = "feature_code",
+         drug_discharges = "value")
+
+life_drug_vigintile <- left_join(life_expectancy_by_hb,
+                          drug_discharges_by_hb,
+                          by = "hb_code")
+
+life_drug_vigintile <- left_join(vigintile_dep_2020, life_drug_vigintile,
+                                 by = "hb_code")
+
+simp_data_zone_bdry <- simp_data_zone_bdry %>%
+  left_join(filter(life_drug_vigintile, sex == "Male"),
+            by = c("DataZone" = "dz2011_code"))
+
+### Wrangling for life expectancy by average SIMD
+
+life_drug_vigintile_hb <- life_drug_vigintile %>%
+  group_by(hb_code) %>%
+  summarise(mean_vigintile = mean(vigintile_value), mean_life_exp = mean(life_exp))
+
+life_drug_vigintile_hb <- left_join(life_drug_vigintile_hb, hbname, c("hb_code" = "HBCode"))
+
+### Wrangling for drug discharges by SIMD ranking
+
+drug_vigintile_hb <- left_join(life_drug_vigintile, hbname, c("hb_code" = "HBCode"))
+
+drug_vigintile_hb_simp <- drug_vigintile_hb %>% 
+  group_by(hb_name) %>% 
+  summarise(discharges = mean(drug_discharges), mean_vig = mean(vigintile_value))
+
+
+### Wrangling for distribution of SIMD vigintile rank by Health Board
+
+life_exp_vigintile_hb <- left_join(life_drug_vigintile, hbname, c("hb_code" = "HBCode"))
