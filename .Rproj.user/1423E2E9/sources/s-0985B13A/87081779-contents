@@ -28,11 +28,11 @@ Cancer effects people of all ages and genders. Some people have a genetic predis
 
 Some cancers are also gender specific, only men can get prostate cancer and only women can get ovarian cancer for example.
 
-I have investigated the cancer rates in the Scottish Borders and had a further look into the age of cancer patients who have died. 
+Firstly, have investigated the cancer rates in the Scottish Borders and had a further look into the age of cancer patients who have died. 
 
-Secondly I have investigated the most occurring cancer types for each gender to find out if there are any cancers that are prevalent in both genders.
+Secondly, I have investigated the most occurring cancer types for each gender to find out if there are any non-gender specific cancers that are prevalent in both genders.
 
-Finally I also aimed to identify if the most reported cancer types were also the cancer types that were the highest causes of death
+Finally, I also aimed to identify if the most reported cancer types were also the cancer types that were the highest causes of death for both genders.
  
 ### Distrubtion of age at death by gender
  
@@ -63,6 +63,19 @@ Overall we can see that while the distributions are similar, there do appear to 
 ```{r echo=FALSE}
 borders_incidences_long %>%
   filter(age_range != "5-9", age_range != ">85") %>% 
+  ggplot() +
+  aes(x = age_range, y = number_of_incidences) +
+  geom_col(fill = "black") +
+  facet_wrap(~ sex) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 60)) +
+    labs(title = "Distribution of Cancer Incidence by Age",
+       subtitle = "2015 - 2019",
+       x = "Age (Years)",
+       y = "Number of Cancer Cases")
+
+borders_incidences_long %>%
   ggplot() +
   aes(x = age_range, y = number_of_incidences) +
   geom_col(fill = "black") +
